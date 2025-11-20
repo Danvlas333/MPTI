@@ -1,1 +1,424 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Агент планирования</title>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Google Sans', sans-serif;
+    }
 
+    body {
+      background-color: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 40px;
+      overflow: hidden;
+      position: relative;
+      background: transparent;
+    }
+
+    .bg-video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -2;
+      pointer-events: none;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: -1;
+    }
+
+    .container {
+      display: flex;
+      gap: 72px;
+      align-items: center;
+      position: relative;
+      z-index: 10;
+    }
+
+    .left-panel {
+      background: rgba(128, 128, 128, 0.7);
+      border-radius: 28px;
+      padding: 0;
+      width: 960px;
+      min-height: 720px;
+      box-shadow: 0 6px 32px rgba(0, 0, 0, 0.15);
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .header {
+      background: rgba(64, 64, 64, 0.9);
+      color: white;
+      padding: 20px 32px;
+      border-radius: 28px 28px 0 0;
+      font-weight: 600;
+      font-size: 26px;
+      text-align: center;
+      width: 100%;
+    }
+
+    .chat-content {
+      flex-grow: 1;
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
+    }
+
+    .chat-messages {
+      flex-grow: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 16px 0;
+    }
+
+    .message.bot {
+      background: rgba(96, 96, 96, 0.8);
+      color: white;
+      padding: 16px 24px;
+      border-radius: 20px 20px 20px 0;
+      max-width: 80%;
+      align-self: flex-start;
+      font-size: 16px;
+      line-height: 1.6;
+      word-wrap: break-word;
+    }
+
+    .message.user {
+      background: linear-gradient(135deg, #7bed9f, #55d6be);
+      color: white;
+      padding: 16px 24px;
+      border-radius: 20px 20px 0 20px;
+      max-width: 80%;
+      align-self: flex-end;
+      font-size: 16px;
+      line-height: 1.6;
+      word-wrap: break-word;
+    }
+
+    .input-area {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .file-button {
+      background: rgba(64, 64, 64, 0.8);
+      color: white;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 16px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      align-self: flex-start;
+    }
+
+    .search-input-wrapper {
+      display: flex;
+      align-items: center;
+      background: rgba(64, 64, 64, 0.8);
+      border-radius: 20px;
+      padding: 16px 24px;
+      gap: 16px;
+    }
+
+    .search-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 16px;
+      outline: none;
+    }
+
+    .send-button {
+      background: linear-gradient(135deg, #7bed9f, #55d6be);
+      color: white;
+      border-radius: 50%;
+      width: 52px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .send-button svg {
+      width: 24px;
+      height: 24px;
+      fill: white;
+    }
+
+    .right-panel {
+      background: rgba(128, 128, 128, 0.7);
+      border-radius: 28px;
+      padding: 32px;
+      width: 480px;
+      min-height: 576px;
+      box-shadow: 0 6px 32px rgba(0, 0, 0, 0.15);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .right-header {
+      color: white;
+      font-weight: 600;
+      font-size: 26px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .filter-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .label {
+      color: white;
+      font-size: 16px;
+      min-width: 160px;
+    }
+
+    .custom-select {
+      position: relative;
+      flex: 1;
+    }
+
+    .custom-select select {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background: rgba(96, 96, 96, 0.8);
+      color: white;
+      border: none;
+      border-radius: 20px;
+      padding: 12px 20px;
+      font-size: 16px;
+      width: 100%;
+      cursor: pointer;
+      outline: none;
+      font-family: 'Google Sans', sans-serif;
+    }
+
+    .custom-select::after {
+      content: "▼";
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: white;
+      pointer-events: none;
+      font-size: 14px;
+    }
+
+    .filter-icon {
+      margin-top: auto;
+      background: linear-gradient(135deg, #7bed9f, #55d6be);
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .filter-icon svg {
+      width: 32px;
+      height: 32px;
+      fill: white;
+    }
+  </style>
+</head>
+<body>
+  <video autoplay muted loop playsinline class="bg-video">
+    <source src="{{ url_for('static', filename='video.mp4') }}" type="video/mp4">
+    Ваш браузер не поддерживает видео.
+  </video>
+
+  <div class="overlay"></div>
+
+  <div class="container">
+    <!-- Левый блок: чат -->
+    <div class="left-panel">
+      <div class="header">Агент, который помогает планировать</div>
+      <div class="chat-content">
+        <div class="chat-messages" id="chat-messages">
+          <div class="message bot">
+            Привет! Я помогу тебе найти нужные мероприятия и спланировать календарь. Используй поле для ввода или отправь запрос с помощью фильтра.
+          </div>
+        </div>
+        <div class="input-area">
+          <div class="file-button">📎 загрузка файла</div>
+          <div class="search-input-wrapper">
+            <input type="text" class="search-input" id="user-input" placeholder="например: значимые ИТ-конференции в Санкт-Петербурге 2025 года">
+            <div class="send-button" id="send-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="right-header">Мероприятие</div>
+      <div class="filter-row">
+        <div class="label">Город:</div>
+        <div class="custom-select">
+          <select>
+            <option value="">выбрать город</option>
+            <option value="spb">Санкт-Петербург</option>
+            <option value="msk">Москва</option>
+            <option value="ekb">Екатеринбург</option>
+            <option value="novosibirsk">Новосибирск</option>
+          </select>
+        </div>
+      </div>
+      <div class="filter-row">
+        <div class="label">Дата:</div>
+        <div class="custom-select">
+          <select>
+            <option value="">год, месяц, день</option>
+            <option value="2025">2025 год</option>
+            <option value="2026">2026 год</option>
+          </select>
+        </div>
+      </div>
+      <div class="filter-row">
+        <div class="label">Количество гостей:</div>
+        <div class="custom-select">
+          <select>
+            <option value="1">1+</option>
+            <option value="5">5+</option>
+            <option value="10">10+</option>
+            <option value="20">20+</option>
+            <option value="50">50+</option>
+            <option value="100">100+</option>
+            <option value="200">200+</option>
+            <option value="500">500+</option>
+            <option value="1000">1000+</option>
+            <option value="2000">2000+</option>
+            <option value="5000">5000+</option>
+            <option value="10000">10000+</option>
+          </select>
+        </div>
+      </div>
+      <div class="filter-row">
+        <div class="label">Количество спикеров:</div>
+        <div class="custom-select">
+          <select>
+            <option value="1">1+</option>
+            <option value="5">5+</option>
+            <option value="10">10+</option>
+            <option value="20">20+</option>
+            <option value="50">50+</option>
+            <option value="100">100+</option>
+            <option value="200">200+</option>
+            <option value="500">500+</option>
+            <option value="1000">1000+</option>
+            <option value="2000">2000+</option>
+            <option value="5000">5000+</option>
+            <option value="10000">10000+</option>
+          </select>
+        </div>
+      </div>
+      <div class="filter-row">
+        <div class="label">Тип мероприятия:</div>
+        <div class="custom-select">
+          <select>
+            <option value="">тип</option>
+            <option value="conference">Конференция</option>
+            <option value="workshop">Воркшоп</option>
+            <option value="meetup">Митап</option>
+            <option value="hackathon">Хакатон</option>
+          </select>
+        </div>
+      </div>
+      <div class="filter-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path d="M12 2L2 7l10 5 10-5M2 12l10 5 10-5M2 12v5l10 5m0 0v-5M12 17v5l10-5M2 7v5l10 5" stroke="white" stroke-width="2" fill="none"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const chatMessages = document.getElementById('chat-messages');
+      const userInput = document.getElementById('user-input');
+      const sendBtn = document.getElementById('send-btn');
+
+      function sendMessage() {
+        const text = userInput.value.trim();
+        if (!text) return;
+
+        const userMsg = document.createElement('div');
+        userMsg.className = 'message user';
+        userMsg.textContent = text;
+        chatMessages.appendChild(userMsg);
+        userInput.value = '';
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        fetch('/send_message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text }),
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const botMsg = document.createElement('div');
+            botMsg.className = 'message bot';
+            botMsg.textContent = data.response;
+            chatMessages.appendChild(botMsg);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+          }
+        })
+        .catch(() => {
+          const botMsg = document.createElement('div');
+          botMsg.className = 'message bot';
+          botMsg.textContent = 'Ошибка соединения.';
+          chatMessages.appendChild(botMsg);
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+      }
+
+      sendBtn.addEventListener('click', sendMessage);
+      userInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMessage();
+      });
+    });
+  </script>
+</body>
+</html>
