@@ -96,14 +96,14 @@ def main():
     JSON_OUTPUT = "events_vector_db.json"
     MODEL_NAME = "cointegrated/rubert-tiny2"
 
-    print("🔍 Извлечение событий...")
+    print(" Извлечение событий...")
     events = extract_events_precise(DOCX_FILE)
-    print(f"✅ Найдено {len(events)} событий.")
+    print(f" Найдено {len(events)} событий.")
 
-    print("🧠 Загрузка модели rubert-tiny2...")
+    print(" Загрузка модели rubert-tiny2...")
     model = SentenceTransformer(MODEL_NAME)
 
-    print("🔢 Векторизация...")
+    print(" Векторизация...")
     database = []
     for i, (date_str, raw_text) in enumerate(events):
         clean_text = clean_event_for_embedding(raw_text)
@@ -115,12 +115,13 @@ def main():
         })
         print(f"  [{i+1}/{len(events)}] {clean_text[:50]}...")
 
-    print("💾 Сохранение...")
+    print(" Сохранение...")
     with open(JSON_OUTPUT, "w", encoding="utf-8") as f:
         json.dump(database, f, ensure_ascii=False, indent=2)
 
-    print(f"✅ База сохранена: {JSON_OUTPUT}")
-    print(f"📊 Размер вектора: {vector.shape[0]}")
+    print(f" База сохранена: {JSON_OUTPUT}")
+    print(f" Размер вектора: {vector.shape[0]}")
 
 if __name__ == "__main__":
+
     main()
